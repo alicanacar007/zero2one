@@ -48,9 +48,41 @@ final class OdysseyClient {
         developerEmail: String? = ProcessInfo.processInfo.environment["ODYSSEY_DEVELOPER_EMAIL"],
         baseURL: URL = URL(string: "https://api.odyssey.ml")!
     ) {
-        self.apiKey = apiKey ?? ""
-        self.developerEmail = developerEmail ?? ""
+        let envFromFile = OdysseyClient.loadEnvFromFile()
+        self.apiKey = apiKey ?? envFromFile.apiKey ?? ""
+        self.developerEmail = developerEmail ?? envFromFile.developerEmail ?? ""
         self.baseURL = baseURL
+    }
+
+    private static func loadEnvFromFile() -> (apiKey: String?, developerEmail: String?) {
+        let fileURL = URL(fileURLWithPath: #file)
+        let packageRoot = fileURL
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let envURL = packageRoot.appendingPathComponent(".env")
+        guard let data = try? Data(contentsOf: envURL),
+              let content = String(data: data, encoding: .utf8) else {
+            return (nil, nil)
+        }
+        var apiKey: String?
+        var developerEmail: String?
+        for line in content.split(separator: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.isEmpty || trimmed.hasPrefix("#") {
+                continue
+            }
+            let parts = trimmed.split(separator: "=", maxSplits: 1).map(String.init)
+            guard parts.count == 2 else { continue }
+            let key = parts[0]
+            let value = parts[1]
+            if key == "ODYSSEY_API_KEY" {
+                apiKey = value
+            } else if key == "ODYSSEY_DEVELOPER_EMAIL" {
+                developerEmail = value
+            }
+        }
+        return (apiKey, developerEmail)
     }
 
     func startStream(
