@@ -1,0 +1,41 @@
+{
+  "": {
+    "swift-dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/master.swiftdeps"
+  },
+  "/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/AppState.swift": {
+    "dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/AppState.d",
+    "object": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/AppState.swift.o",
+    "swiftmodule": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/AppState~partial.swiftmodule",
+    "swift-dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/AppState.swiftdeps"
+  },
+  "/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/ContentView.swift": {
+    "dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ContentView.d",
+    "object": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ContentView.swift.o",
+    "swiftmodule": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ContentView.swiftdeps"
+  },
+  "/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/FloatingWindowApp.swift": {
+    "dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/FloatingWindowApp.d",
+    "object": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/FloatingWindowApp.swift.o",
+    "swiftmodule": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/FloatingWindowApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/FloatingWindowApp.swiftdeps"
+  },
+  "/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/OdysseyClient.swift": {
+    "dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OdysseyClient.d",
+    "object": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OdysseyClient.swift.o",
+    "swiftmodule": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OdysseyClient~partial.swiftmodule",
+    "swift-dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OdysseyClient.swiftdeps"
+  },
+  "/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/OllamaClient.swift": {
+    "dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OllamaClient.d",
+    "object": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OllamaClient.swift.o",
+    "swiftmodule": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OllamaClient~partial.swiftmodule",
+    "swift-dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OllamaClient.swiftdeps"
+  },
+  "/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/ScreenshotService.swift": {
+    "dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ScreenshotService.d",
+    "object": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ScreenshotService.swift.o",
+    "swiftmodule": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ScreenshotService~partial.swiftmodule",
+    "swift-dependencies": "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ScreenshotService.swiftdeps"
+  }
+}

@@ -1,0 +1,81 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "HowToApp-arm64-apple-macosx15.0-debug.exe": ["<HowToApp-arm64-apple-macosx15.0-debug.exe>"]
+  "HowToApp-arm64-apple-macosx15.0-debug.module": ["<HowToApp-arm64-apple-macosx15.0-debug.module>"]
+  "PackageStructure": ["<PackageStructure>"]
+  "main": ["<HowToApp-arm64-apple-macosx15.0-debug.exe>","<HowToApp-arm64-apple-macosx15.0-debug.module>"]
+  "test": ["<HowToApp-arm64-apple-macosx15.0-debug.exe>","<HowToApp-arm64-apple-macosx15.0-debug.module>"]
+default: "main"
+nodes:
+  "/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp":
+    is-mutated: true
+commands:
+  "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp-entitlement.plist":
+    tool: write-auxiliary-file
+    inputs: ["<entitlement-plist>","<com.apple.security.get-task-allow>"]
+    outputs: ["/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp-entitlement.plist"]
+    description: "Write auxiliary file /Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp-entitlement.plist"
+
+  "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/AppState.swift","/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/ContentView.swift","/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/FloatingWindowApp.swift","/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/OdysseyClient.swift","/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/OllamaClient.swift","/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/ScreenshotService.swift"]
+    outputs: ["/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/sources"]
+    description: "Write auxiliary file /Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/sources"
+
+  "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/AppState.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ContentView.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/FloatingWindowApp.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OdysseyClient.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OllamaClient.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ScreenshotService.swift.o"]
+    outputs: ["/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.product/Objects.LinkFileList"
+
+  "/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"]
+    outputs: ["/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+
+  "<HowToApp-arm64-apple-macosx15.0-debug.exe>":
+    tool: phony
+    inputs: ["<HowToApp-arm64-apple-macosx15.0-debug.exe-CodeSigning>"]
+    outputs: ["<HowToApp-arm64-apple-macosx15.0-debug.exe>"]
+
+  "<HowToApp-arm64-apple-macosx15.0-debug.module>":
+    tool: phony
+    inputs: ["/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/AppState.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ContentView.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/FloatingWindowApp.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OdysseyClient.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OllamaClient.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ScreenshotService.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/Modules/HowToApp.swiftmodule"]
+    outputs: ["<HowToApp-arm64-apple-macosx15.0-debug.module>"]
+
+  "C.HowToApp-arm64-apple-macosx15.0-debug.exe":
+    tool: shell
+    inputs: ["/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/AppState.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ContentView.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/FloatingWindowApp.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OdysseyClient.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OllamaClient.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ScreenshotService.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.product/Objects.LinkFileList"]
+    outputs: ["/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp"]
+    description: "Linking ./.build/arm64-apple-macosx/debug/HowToApp"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-L","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug","-o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp","-module-name","HowToApp","-Xlinker","-no_warn_duplicate_libraries","-emit-executable","-Xlinker","-alias","-Xlinker","_HowToApp_main","-Xlinker","_main","-Xlinker","-rpath","-Xlinker","@loader_path","@/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.product/Objects.LinkFileList","-target","arm64-apple-macosx13.0","-Xlinker","-add_ast_path","-Xlinker","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/Modules/HowToApp.swiftmodule","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g"]
+
+  "C.HowToApp-arm64-apple-macosx15.0-debug.exe-entitlements":
+    tool: shell
+    inputs: ["/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp-entitlement.plist"]
+    outputs: ["<HowToApp-arm64-apple-macosx15.0-debug.exe-CodeSigning>"]
+    description: "Applying debug entitlements to ./.build/arm64-apple-macosx/debug/HowToApp"
+    args: ["codesign","--force","--sign","-","--entitlements","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp-entitlement.plist","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp"]
+
+  "C.HowToApp-arm64-apple-macosx15.0-debug.module":
+    tool: shell
+    inputs: ["/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/AppState.swift","/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/ContentView.swift","/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/FloatingWindowApp.swift","/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/OdysseyClient.swift","/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/OllamaClient.swift","/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/ScreenshotService.swift","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/sources"]
+    outputs: ["/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/AppState.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ContentView.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/FloatingWindowApp.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OdysseyClient.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/OllamaClient.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/ScreenshotService.swift.o","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/Modules/HowToApp.swiftmodule"]
+    description: "Compiling Swift Module 'HowToApp' (6 sources)"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","HowToApp","-emit-dependencies","-emit-module","-emit-module-path","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/Modules/HowToApp.swiftmodule","-output-file-map","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/output-file-map.json","-incremental","-c","@/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/HowToApp.build/sources","-I","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx13.0","-enable-batch-mode","-index-store-path","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j10","-DSWIFT_PACKAGE","-DDEBUG","-module-cache-path","/Users/alicanacar/Main Ali/projects2026/HowTo/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-Xfrontend","-entry-point-function-name","-Xfrontend","HowToApp_main","-color-diagnostics","-swift-version","5","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","howto"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Users/alicanacar/Main Ali/projects2026/HowTo/Sources/HowToApp/","/Users/alicanacar/Main Ali/projects2026/HowTo/Package.swift","/Users/alicanacar/Main Ali/projects2026/HowTo/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+
