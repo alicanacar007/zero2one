@@ -100,6 +100,16 @@ final class AppState: ObservableObject {
     }
 
     func addScreenshotMessage() {
+        if let data = screenshotService.captureMainDisplayExcludingAppWindowPNGData() {
+            let message = ChatMessage(
+                role: .user,
+                text: "Screenshot",
+                imageData: data
+            )
+            chatMessages.append(message)
+            return
+        }
+
         if !CGPreflightScreenCaptureAccess() {
             _ = CGRequestScreenCaptureAccess()
             let errorMessage = ChatMessage(
@@ -110,21 +120,13 @@ final class AppState: ObservableObject {
             chatMessages.append(errorMessage)
             return
         }
-        guard let data = screenshotService.captureMainDisplayExcludingAppWindowPNGData() else {
-            let errorMessage = ChatMessage(
-                role: .assistant,
-                text: "Failed to capture screenshot",
-                imageData: nil
-            )
-            chatMessages.append(errorMessage)
-            return
-        }
-        let message = ChatMessage(
-            role: .user,
-            text: "Screenshot",
-            imageData: data
+
+        let errorMessage = ChatMessage(
+            role: .assistant,
+            text: "Failed to capture screenshot",
+            imageData: nil
         )
-        chatMessages.append(message)
+        chatMessages.append(errorMessage)
     }
 
     @MainActor
