@@ -44,29 +44,73 @@ struct FloatingWindowAccessor: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {}
 }
 
+struct ChatMessageView: View {
+    let message: ChatMessage
+
+    var body: some View {
+        HStack {
+            if message.role == .assistant {
+                VStack(alignment: .leading, spacing: 8) {
+                    if !message.text.isEmpty {
+                        Text(message.text)
+                    }
+                    if let data = message.imageData,
+                       let nsImage = NSImage(data: data) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: 200, maxHeight: 200)
+                    }
+                }
+                .padding(12)
+                .background(Color.accentColor.opacity(0.08))
+                .cornerRadius(12)
+                Spacer(minLength: 0)
+            } else {
+                Spacer(minLength: 0)
+                VStack(alignment: .trailing, spacing: 8) {
+                    if !message.text.isEmpty {
+                        Text(message.text)
+                    }
+                    if let data = message.imageData,
+                       let nsImage = NSImage(data: data) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: 200, maxHeight: 200)
+                    }
+                }
+                .padding(12)
+                .background(Color(NSColor.controlAccentColor.withAlphaComponent(0.1)))
+                .cornerRadius(12)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
     @State private var chatInput: String = ""
 
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 8) {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("Video")
                     .font(.title3)
                     .fontWeight(.semibold)
                 VideoWebView(url: appState.videoURL)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.black.opacity(0.8))
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .background(Color.black.opacity(0.9))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 6)
             }
-            .padding(12)
+            .padding(16)
             .frame(width: 360)
-            .background(Color.gray.opacity(0.06))
-            .cornerRadius(12)
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("Workflow")
                     .font(.title3)
                     .fontWeight(.semibold)
@@ -76,7 +120,7 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 } else {
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 12) {
                             ForEach(appState.workflowSteps) { step in
                                 Button(action: {
                                     appState.handleWorkflowStepTap(step)
@@ -89,10 +133,10 @@ struct ContentView: View {
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                     }
-                                    .padding(10)
+                                    .padding(12)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color.gray.opacity(0.08))
-                                    .cornerRadius(10)
+                                    .background(Color(NSColor.controlBackgroundColor))
+                                    .cornerRadius(12)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -101,38 +145,28 @@ struct ContentView: View {
                     }
                 }
             }
-            .padding(12)
+            .padding(16)
             .frame(width: 300)
-            .background(Color.gray.opacity(0.06))
-            .cornerRadius(12)
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("AI Chat")
                     .font(.title3)
                     .fontWeight(.semibold)
+                Picker("Provider", selection: $appState.chatProvider) {
+                    ForEach(AppState.ChatProvider.allCases) { provider in
+                        Text(provider.rawValue).tag(provider)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 220)
                 ScrollViewReader { proxy in
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 10) {
                             ForEach(appState.chatMessages) { message in
-                                HStack {
-                                    if message.role == .assistant {
-                                        Text(message.text)
-                                            .padding(10)
-                                            .background(Color.blue.opacity(0.1))
-                                            .cornerRadius(10)
-                                        Spacer(minLength: 0)
-                                    } else {
-                                        Spacer(minLength: 0)
-                                        Text(message.text)
-                                            .padding(10)
-                                            .background(Color.green.opacity(0.15))
-                                            .cornerRadius(10)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                                .id(message.id)
+                                ChatMessageView(message: message)
+                                    .id(message.id)
                             }
                         }
                         .padding(.vertical, 4)
@@ -144,6 +178,11 @@ struct ContentView: View {
                     }
                 }
                 HStack(spacing: 8) {
+                    Button(action: {
+                        appState.addScreenshotMessage()
+                    }) {
+                        Text("Screenshot")
+                    }
                     TextField("Ask anything about this workflow", text: $chatInput)
                         .textFieldStyle(.roundedBorder)
                     Button(action: {
@@ -157,12 +196,11 @@ struct ContentView: View {
                 }
                 .padding(.top, 4)
             }
-            .padding(12)
+            .padding(16)
             .frame(minWidth: 320)
-            .background(Color.gray.opacity(0.06))
-            .cornerRadius(12)
         }
-        .padding(8)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
         .background(FloatingWindowAccessor())
         .overlay(
             VStack {

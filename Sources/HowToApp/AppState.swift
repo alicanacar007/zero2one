@@ -10,6 +10,7 @@ struct ChatMessage: Identifiable, Hashable {
     let id = UUID()
     let role: ChatRole
     let text: String
+    let imageData: Data?
 }
 
 struct WorkflowStep: Identifiable, Hashable, Decodable {
@@ -27,6 +28,13 @@ struct WorkflowStep: Identifiable, Hashable, Decodable {
 }
 
 final class AppState: ObservableObject {
+    enum ChatProvider: String, CaseIterable, Identifiable {
+        case openAI = "OpenAI"
+        case ollama = "Ollama"
+
+        var id: String { rawValue }
+    }
+
     @Published var currentPrompt: String = ""
     @Published var isProcessing: Bool = false
     @Published var videoURL: URL?
@@ -34,18 +42,28 @@ final class AppState: ObservableObject {
     @Published var chatMessages: [ChatMessage] = []
     @Published var statusText: String?
     @Published var sessionId: String?
+    @Published var chatProvider: ChatProvider = .ollama
 
     private let odysseyClient: OdysseyClient
     private let ollamaClient: OllamaClient
+    private let openAIClient: OpenAIClient?
     private let screenshotService: ScreenshotService
 
     init(
         odysseyClient: OdysseyClient = OdysseyClient(),
         ollamaClient: OllamaClient = OllamaClient(),
+        openAIClient: OpenAIClient? = OpenAIClient(),
         screenshotService: ScreenshotService = ScreenshotService()
     ) {
         self.odysseyClient = odysseyClient
         self.ollamaClient = ollamaClient
+        if let client = openAIClient, client.hasAPIKey {
+            self.openAIClient = client
+            self.chatProvider = .openAI
+        } else {
+            self.openAIClient = nil
+            self.chatProvider = .ollama
+        }
         self.screenshotService = screenshotService
     }
 
@@ -67,11 +85,29 @@ final class AppState: ObservableObject {
     func sendChat(message: String) {
         let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        let userMessage = ChatMessage(role: .user, text: trimmed)
+        let userMessage = ChatMessage(role: .user, text: trimmed, imageData: nil)
         chatMessages.append(userMessage)
         Task {
-            await sendChatToOllama(message: trimmed)
+            await sendChatToAI(message: trimmed)
         }
+    }
+
+    func addScreenshotMessage() {
+        guard let data = screenshotService.captureMainDisplayExcludingAppWindowPNGData() else {
+            let errorMessage = ChatMessage(
+                role: .assistant,
+                text: "Failed to capture screenshot",
+                imageData: nil
+            )
+            chatMessages.append(errorMessage)
+            return
+        }
+        let message = ChatMessage(
+            role: .user,
+            text: "Screenshot",
+            imageData: data
+        )
+        chatMessages.append(message)
     }
 
     @MainActor
@@ -101,6 +137,48 @@ final class AppState: ObservableObject {
             await MainActor.run {
                 statusText = "Odyssey error: \(error.localizedDescription)"
                 isProcessing = false
+            }
+        }
+    }
+
+    private func sendChatToAI(message: String) async {
+        switch chatProvider {
+        case .openAI:
+            guard let openAIClient else {
+                let errorMessage = ChatMessage(
+                    role: .assistant,
+                    text: "OpenAI is not configured. Set OPENAI_API_KEY or switch to Ollama.",
+                    imageData: nil
+                )
+                await MainActor.run {
+                    chatMessages.append(errorMessage)
+                }
+                return
+            }
+            await sendChatToOpenAI(message: message, client: openAIClient)
+        case .ollama:
+            await sendChatToOllama(message: message)
+        }
+    }
+
+    private func sendChatToOpenAI(message: String, client: OpenAIClient) async {
+        do {
+            let reply = try await client.send(
+                message: message,
+                previousMessages: chatMessages
+            )
+            let assistantMessage = ChatMessage(role: .assistant, text: reply, imageData: nil)
+            await MainActor.run {
+                chatMessages.append(assistantMessage)
+            }
+        } catch {
+            let errorMessage = ChatMessage(
+                role: .assistant,
+                text: "OpenAI error: \(error.localizedDescription)",
+                imageData: nil
+            )
+            await MainActor.run {
+                chatMessages.append(errorMessage)
             }
         }
     }
@@ -142,14 +220,15 @@ final class AppState: ObservableObject {
                 message: message,
                 previousMessages: chatMessages
             )
-            let assistantMessage = ChatMessage(role: .assistant, text: reply)
+            let assistantMessage = ChatMessage(role: .assistant, text: reply, imageData: nil)
             await MainActor.run {
                 chatMessages.append(assistantMessage)
             }
         } catch {
             let errorMessage = ChatMessage(
                 role: .assistant,
-                text: "Ollama error: \(error.localizedDescription)"
+                text: "Ollama error: \(error.localizedDescription)",
+                imageData: nil
             )
             await MainActor.run {
                 chatMessages.append(errorMessage)
