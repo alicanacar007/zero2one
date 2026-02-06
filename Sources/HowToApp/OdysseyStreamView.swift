@@ -15,6 +15,7 @@ struct OdysseyStreamView: NSViewRepresentable {
         config.userContentController = controller
         config.mediaTypesRequiringUserActionForPlayback = []
         let webView = WKWebView(frame: .zero, configuration: config)
+        webView.configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         bridge.attach(webView: webView)
         return webView
     }

@@ -39,7 +39,7 @@ final class OllamaClient {
 
     init(
         baseURL: URL = URL(string: "http://127.0.0.1:11434")!,
-        model: String = "llama3.2-vision:11b",
+        model: String = "llava",
         logStore: LogStore = .shared
     ) {
         self.baseURL = baseURL

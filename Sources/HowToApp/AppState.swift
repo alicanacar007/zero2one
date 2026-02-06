@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import CoreGraphics
 
 enum ChatRole: String, Codable {
     case user
@@ -57,6 +58,9 @@ final class AppState: ObservableObject {
         screenshotService: ScreenshotService = ScreenshotService(),
         logStore: LogStore = .shared
     ) {
+        if !CGPreflightScreenCaptureAccess() {
+            _ = CGRequestScreenCaptureAccess()
+        }
         self.odysseyBridge = odysseyBridge
         self.ollamaClient = ollamaClient
         if let client = openAIClient, client.hasAPIKey {
@@ -96,6 +100,16 @@ final class AppState: ObservableObject {
     }
 
     func addScreenshotMessage() {
+        if !CGPreflightScreenCaptureAccess() {
+            _ = CGRequestScreenCaptureAccess()
+            let errorMessage = ChatMessage(
+                role: .assistant,
+                text: "Screen Recording permission is required. Enable it in System Settings > Privacy & Security > Screen Recording for HowToApp, then restart the app.",
+                imageData: nil
+            )
+            chatMessages.append(errorMessage)
+            return
+        }
         guard let data = screenshotService.captureMainDisplayExcludingAppWindowPNGData() else {
             let errorMessage = ChatMessage(
                 role: .assistant,
@@ -123,8 +137,9 @@ final class AppState: ObservableObject {
             isProcessing = true
             statusText = "Contacting Odyssey"
         }
+        let screenshotData = screenshotService.captureMainDisplayPNGData()
         do {
-            try await odysseyBridge.startStream(prompt: prompt)
+            try await odysseyBridge.startStream(prompt: prompt, screenshotPNGData: screenshotData)
             await MainActor.run {
                 isProcessing = false
                 statusText = nil
@@ -193,10 +208,11 @@ final class AppState: ObservableObject {
             isProcessing = true
             statusText = "Refining stream"
         }
+        let screenshotData = screenshotService.captureMainDisplayPNGData()
         do {
             if let sessionId {
                 _ = sessionId
-                try await odysseyBridge.interact(prompt: prompt)
+                try await odysseyBridge.interact(prompt: prompt, screenshotPNGData: screenshotData)
                 await MainActor.run {
                     isProcessing = false
                     statusText = nil

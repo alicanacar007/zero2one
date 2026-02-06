@@ -36,7 +36,7 @@ final class OdysseyBridge: ObservableObject {
         let processEnv = ProcessInfo.processInfo.environment
         self.apiKey = processEnv["ODYSSEY_API_KEY"] ?? env.apiKey ?? ""
         self.sdkURL = processEnv["ODYSSEY_SDK_URL"] ?? env.sdkURL ?? "https://cdn.jsdelivr.net/npm/@odysseyml/odyssey@latest/dist/index.umd.js"
-        self.sdkMode = processEnv["ODYSSEY_SDK_MODE"] ?? env.sdkMode ?? "script"
+        self.sdkMode = processEnv["ODYSSEY_SDK_MODE"] ?? env.sdkMode ?? "auto"
         self.sdkGlobal = processEnv["ODYSSEY_SDK_GLOBAL"] ?? env.sdkGlobal ?? "Odyssey"
     }
 
@@ -45,22 +45,33 @@ final class OdysseyBridge: ObservableObject {
         loadHTML(in: webView)
     }
 
-    func startStream(prompt: String) async throws {
-        let payload: [String: Any] = [
-            "prompt": prompt
-        ]
+    func startStream(prompt: String, screenshotPNGData: Data?) async throws {
+        let payload = buildPayload(prompt: prompt, screenshotPNGData: screenshotPNGData)
         _ = try await callJS(function: "startStream", payload: payload)
     }
 
-    func interact(prompt: String) async throws {
-        let payload: [String: Any] = [
-            "prompt": prompt
-        ]
+    func interact(prompt: String, screenshotPNGData: Data?) async throws {
+        let payload = buildPayload(prompt: prompt, screenshotPNGData: screenshotPNGData)
         _ = try await callJS(function: "interact", payload: payload)
     }
 
     func endStream() async throws {
         _ = try await callJS(function: "endStream", payload: nil)
+    }
+
+    private func buildPayload(prompt: String, screenshotPNGData: Data?) -> [String: Any] {
+        var payload: [String: Any] = [
+            "prompt": prompt
+        ]
+        if let screenshotPNGData {
+            let base64 = screenshotPNGData.base64EncodedString()
+            let dataURL = "data:image/png;base64,\(base64)"
+            payload["screenshotDataUrl"] = dataURL
+            Task { @MainActor in
+                logStore.log(.info, service: "Odyssey", message: "Attached screenshot to request")
+            }
+        }
+        return payload
     }
 
     func handleEvent(_ payload: [String: Any]) {
@@ -89,31 +100,25 @@ final class OdysseyBridge: ObservableObject {
             payloadString = "null"
         }
         let script = """
-        (async () => {
+        (() => {
           try {
-            const result = await window.odysseyBridge.\(function)(\(payloadString));
-            return JSON.stringify({ ok: true, result });
+            const fn = window.odysseyBridge.\(function);
+            if (typeof fn !== 'function') {
+              window.odysseyBridge._reportError(new Error('Odyssey bridge not ready.'));
+              return "error";
+            }
+            const promise = fn(\(payloadString));
+            if (promise && typeof promise.catch === 'function') {
+              promise.catch(err => window.odysseyBridge._reportError(err));
+            }
+            return "ok";
           } catch (err) {
-            return JSON.stringify({ ok: false, error: err?.message || String(err) });
+            window.odysseyBridge._reportError(err);
+            return "error";
           }
         })()
         """
-        let raw = try await evaluate(script: script, in: webView)
-        if let text = raw as? String,
-           let data = text.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let ok = json["ok"] as? Bool {
-            if ok {
-                return json["result"]
-            }
-            if let error = json["error"] as? String {
-                Task { @MainActor in
-                    logStore.log(.error, service: "Odyssey", message: error)
-                }
-                throw OdysseyBridgeError.javascriptError(message: error)
-            }
-        }
-        return raw
+        return try await evaluate(script: script, in: webView)
     }
 
     private func evaluate(script: String, in webView: WKWebView) async throws -> Any? {
@@ -168,24 +173,39 @@ final class OdysseyBridge: ObservableObject {
             }
 
             async function loadSdk() {
-              if (sdkMode === 'module') {
+              post('info', 'Loading Odyssey SDK', { url: sdkUrl, mode: sdkMode, global: sdkGlobal });
+              const tryModule = async () => {
                 const mod = await import(sdkUrl);
                 return mod.default || mod.Odyssey || mod.odyssey || mod;
+              };
+              const tryScript = async () => {
+                return await new Promise((resolve, reject) => {
+                  const script = document.createElement('script');
+                  script.src = sdkUrl;
+                  script.onload = () => {
+                    const globalClient = window[sdkGlobal] || window.Odyssey || window.odyssey;
+                    if (!globalClient) {
+                      reject(new Error('SDK loaded but global not found.'));
+                      return;
+                    }
+                    resolve(globalClient);
+                  };
+                  script.onerror = () => reject(new Error('Failed to load Odyssey SDK from ' + sdkUrl));
+                  document.head.appendChild(script);
+                });
+              };
+              if (sdkMode === 'module') {
+                return await tryModule();
               }
-              return await new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = sdkUrl;
-                script.onload = () => {
-                  const globalClient = window[sdkGlobal] || window.Odyssey || window.odyssey;
-                  if (!globalClient) {
-                    reject(new Error('SDK loaded but global not found.'));
-                    return;
-                  }
-                  resolve(globalClient);
-                };
-                script.onerror = () => reject(new Error('Failed to load Odyssey SDK from ' + sdkUrl));
-                document.head.appendChild(script);
-              });
+              if (sdkMode === 'script') {
+                return await tryScript();
+              }
+              try {
+                return await tryModule();
+              } catch (moduleErr) {
+                post('error', moduleErr?.message || 'Module load failed, trying script');
+                return await tryScript();
+              }
             }
 
             async function ensureClient() {
@@ -209,11 +229,15 @@ final class OdysseyBridge: ObservableObject {
             }
 
             window.odysseyBridge = {
+              _reportError(err) {
+                post('error', err?.message || 'Odyssey error');
+                setStatus('Error');
+              },
               async startStream(payload) {
                 try {
                   setStatus('Starting stream...');
                   const sdk = await ensureClient();
-                  const media = await sdk.connect({
+                  const connectOptions = {
                     onConnected: () => post('info', 'Connected'),
                     onDisconnected: () => post('info', 'Disconnected'),
                     onStreamStarted: (streamId) => post('info', 'Stream started', { streamId }),
@@ -222,13 +246,29 @@ final class OdysseyBridge: ObservableObject {
                     onStreamError: (reason, message) => post('error', message || 'Stream error', { reason }),
                     onError: (error, fatal) => post('error', error?.message || 'SDK error', { fatal }),
                     onStatusChange: (status, message) => post('info', message || 'Status change', { status })
-                  });
+                  };
+                  if (apiKey) {
+                    connectOptions.apiKey = apiKey;
+                  }
+                  const media = await sdk.connect(connectOptions);
                   if (sdk.attachToVideo) {
                     sdk.attachToVideo(videoEl);
                   } else if (media) {
                     videoEl.srcObject = media;
                   }
-                  const streamId = await sdk.startStream(payload || {});
+                  const options = { ...(payload || {}) };
+                  if (options.screenshotDataUrl) {
+                    options.image = options.image || options.screenshotDataUrl;
+                    options.image_url = options.image_url || options.screenshotDataUrl;
+                    options.input = options.input || {};
+                    options.input.image = options.input.image || options.screenshotDataUrl;
+                    options.input.image_url = options.input.image_url || options.screenshotDataUrl;
+                    delete options.screenshotDataUrl;
+                  }
+                  if (apiKey && !options.apiKey) {
+                    options.apiKey = apiKey;
+                  }
+                  const streamId = await sdk.startStream(options);
                   post('info', 'Start stream request sent', { streamId });
                   setStatus('Streaming');
                   return streamId;
@@ -241,7 +281,19 @@ final class OdysseyBridge: ObservableObject {
               async interact(payload) {
                 try {
                   const sdk = await ensureClient();
-                  const streamId = await sdk.interact(payload || {});
+                  const options = { ...(payload || {}) };
+                  if (options.screenshotDataUrl) {
+                    options.image = options.image || options.screenshotDataUrl;
+                    options.image_url = options.image_url || options.screenshotDataUrl;
+                    options.input = options.input || {};
+                    options.input.image = options.input.image || options.screenshotDataUrl;
+                    options.input.image_url = options.input.image_url || options.screenshotDataUrl;
+                    delete options.screenshotDataUrl;
+                  }
+                  if (apiKey && !options.apiKey) {
+                    options.apiKey = apiKey;
+                  }
+                  const streamId = await sdk.interact(options);
                   post('info', 'Interact sent', { streamId });
                   return streamId;
                 } catch (err) {
