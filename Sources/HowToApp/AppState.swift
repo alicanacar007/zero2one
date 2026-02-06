@@ -29,7 +29,7 @@ struct WorkflowStep: Identifiable, Hashable, Decodable {
 
 final class AppState: ObservableObject {
     enum ChatProvider: String, CaseIterable, Identifiable {
-        case openAI = "OpenAI"
+        case openRouter = "OpenRouter"
         case ollama = "Ollama"
 
         var id: String { rawValue }
@@ -44,27 +44,30 @@ final class AppState: ObservableObject {
     @Published var sessionId: String?
     @Published var chatProvider: ChatProvider = .ollama
 
-    private let odysseyClient: OdysseyClient
+    private let odysseyBridge: OdysseyBridge
     private let ollamaClient: OllamaClient
-    private let openAIClient: OpenAIClient?
+    private let openRouterClient: OpenAIClient?
     private let screenshotService: ScreenshotService
+    private let logStore: LogStore
 
     init(
-        odysseyClient: OdysseyClient = OdysseyClient(),
+        odysseyBridge: OdysseyBridge = .shared,
         ollamaClient: OllamaClient = OllamaClient(),
         openAIClient: OpenAIClient? = OpenAIClient(),
-        screenshotService: ScreenshotService = ScreenshotService()
+        screenshotService: ScreenshotService = ScreenshotService(),
+        logStore: LogStore = .shared
     ) {
-        self.odysseyClient = odysseyClient
+        self.odysseyBridge = odysseyBridge
         self.ollamaClient = ollamaClient
         if let client = openAIClient, client.hasAPIKey {
-            self.openAIClient = client
-            self.chatProvider = .openAI
+            self.openRouterClient = client
+            self.chatProvider = .openRouter
         } else {
-            self.openAIClient = nil
+            self.openRouterClient = nil
             self.chatProvider = .ollama
         }
         self.screenshotService = screenshotService
+        self.logStore = logStore
     }
 
     func handleUserPrompt() {
@@ -120,20 +123,16 @@ final class AppState: ObservableObject {
             isProcessing = true
             statusText = "Contacting Odyssey"
         }
-        let screenshotData = screenshotService.captureMainDisplayPNGData()
         do {
-            let response = try await odysseyClient.startStream(
-                prompt: prompt,
-                screenshotPNGData: screenshotData
-            )
+            try await odysseyBridge.startStream(prompt: prompt)
             await MainActor.run {
-                videoURL = response.stream.url
-                workflowSteps = response.steps
-                sessionId = response.sessionId
                 isProcessing = false
                 statusText = nil
             }
         } catch {
+            Task { @MainActor in
+                logStore.log(.error, service: "Odyssey", message: error.localizedDescription)
+            }
             await MainActor.run {
                 statusText = "Odyssey error: \(error.localizedDescription)"
                 isProcessing = false
@@ -143,11 +142,14 @@ final class AppState: ObservableObject {
 
     private func sendChatToAI(message: String) async {
         switch chatProvider {
-        case .openAI:
-            guard let openAIClient else {
+        case .openRouter:
+            guard let openRouterClient else {
+                Task { @MainActor in
+                    logStore.log(.error, service: "OpenRouter", message: "OpenRouter is not configured. Missing API key.")
+                }
                 let errorMessage = ChatMessage(
                     role: .assistant,
-                    text: "OpenAI is not configured. Set OPENAI_API_KEY or switch to Ollama.",
+                    text: "OpenRouter is not configured. Set OPENROUTER_API_KEY or switch to Ollama.",
                     imageData: nil
                 )
                 await MainActor.run {
@@ -155,13 +157,13 @@ final class AppState: ObservableObject {
                 }
                 return
             }
-            await sendChatToOpenAI(message: message, client: openAIClient)
+            await sendChatToOpenRouter(message: message, client: openRouterClient)
         case .ollama:
             await sendChatToOllama(message: message)
         }
     }
 
-    private func sendChatToOpenAI(message: String, client: OpenAIClient) async {
+    private func sendChatToOpenRouter(message: String, client: OpenAIClient) async {
         do {
             let reply = try await client.send(
                 message: message,
@@ -172,9 +174,12 @@ final class AppState: ObservableObject {
                 chatMessages.append(assistantMessage)
             }
         } catch {
+            Task { @MainActor in
+                logStore.log(.error, service: "OpenRouter", message: error.localizedDescription)
+            }
             let errorMessage = ChatMessage(
                 role: .assistant,
-                text: "OpenAI error: \(error.localizedDescription)",
+                text: "OpenRouter error: \(error.localizedDescription)",
                 imageData: nil
             )
             await MainActor.run {
@@ -188,18 +193,11 @@ final class AppState: ObservableObject {
             isProcessing = true
             statusText = "Refining stream"
         }
-        let screenshotData = screenshotService.captureMainDisplayPNGData()
         do {
             if let sessionId {
-                let response = try await odysseyClient.refineStream(
-                    sessionId: sessionId,
-                    prompt: prompt,
-                    screenshotPNGData: screenshotData
-                )
+                _ = sessionId
+                try await odysseyBridge.interact(prompt: prompt)
                 await MainActor.run {
-                    videoURL = response.stream.url
-                    workflowSteps = response.steps
-                    self.sessionId = response.sessionId ?? sessionId
                     isProcessing = false
                     statusText = nil
                 }
@@ -207,6 +205,9 @@ final class AppState: ObservableObject {
                 await generateFromPrompt(prompt: prompt)
             }
         } catch {
+            Task { @MainActor in
+                logStore.log(.error, service: "Odyssey", message: error.localizedDescription)
+            }
             await MainActor.run {
                 statusText = "Odyssey error: \(error.localizedDescription)"
                 isProcessing = false
@@ -225,6 +226,9 @@ final class AppState: ObservableObject {
                 chatMessages.append(assistantMessage)
             }
         } catch {
+            Task { @MainActor in
+                logStore.log(.error, service: "Ollama", message: error.localizedDescription)
+            }
             let errorMessage = ChatMessage(
                 role: .assistant,
                 text: "Ollama error: \(error.localizedDescription)",

@@ -1,25 +1,5 @@
 import SwiftUI
-import WebKit
 import AppKit
-
-struct VideoWebView: NSViewRepresentable {
-    let url: URL?
-
-    func makeNSView(context: Context) -> WKWebView {
-        WKWebView()
-    }
-
-    func updateNSView(_ webView: WKWebView, context: Context) {
-        guard let url else {
-            webView.loadHTMLString("", baseURL: nil)
-            return
-        }
-        if webView.url != url {
-            let request = URLRequest(url: url)
-            webView.load(request)
-        }
-    }
-}
 
 struct FloatingWindowAccessor: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
@@ -91,7 +71,9 @@ struct ChatMessageView: View {
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var logStore: LogStore
     @State private var chatInput: String = ""
+    @State private var showLogs: Bool = false
 
     var body: some View {
         HStack(spacing: 16) {
@@ -99,7 +81,7 @@ struct ContentView: View {
                 Text("Video")
                     .font(.title3)
                     .fontWeight(.semibold)
-                VideoWebView(url: appState.videoURL)
+                OdysseyStreamView(bridge: OdysseyBridge.shared)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.black.opacity(0.9))
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -230,9 +212,100 @@ struct ContentView: View {
                         Text("Generate")
                     }
                     .disabled(appState.isProcessing)
+                    Button(action: {
+                        showLogs = true
+                    }) {
+                        Text("Logs")
+                    }
                 }
                 .frame(width: 500)
             }
         }
+        .sheet(isPresented: $showLogs) {
+            LogsView()
+                .environmentObject(logStore)
+                .frame(minWidth: 720, minHeight: 520)
+        }
+    }
+}
+
+struct LogsView: View {
+    @EnvironmentObject var logStore: LogStore
+    @State private var showErrorsOnly: Bool = true
+
+    private var filteredEntries: [LogEntry] {
+        if showErrorsOnly {
+            return logStore.entries.filter { $0.level == .error }
+        }
+        return logStore.entries
+    }
+
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .medium
+        return formatter
+    }()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Text("Logs")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                Toggle("Errors only", isOn: $showErrorsOnly)
+                    .toggleStyle(.switch)
+                Spacer()
+                Button("Copy Errors") {
+                    logStore.copyErrorsToPasteboard()
+                }
+                Button("Copy All") {
+                    logStore.copyAllToPasteboard()
+                }
+                Button("Clear") {
+                    logStore.clear()
+                }
+            }
+            .padding(.bottom, 4)
+
+            if filteredEntries.isEmpty {
+                Text(showErrorsOnly ? "No errors yet." : "No logs yet.")
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            } else {
+                List(filteredEntries) { entry in
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            Text(entry.service)
+                                .font(.headline)
+                            Text(entry.level.rawValue.uppercased())
+                                .font(.caption)
+                                .padding(.vertical, 2)
+                                .padding(.horizontal, 6)
+                                .background(entry.level == .error ? Color.red.opacity(0.15) : Color.blue.opacity(0.15))
+                                .cornerRadius(6)
+                            if let status = entry.statusCode {
+                                Text("\(status)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Text(dateFormatter.string(from: entry.timestamp))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        if let url = entry.url {
+                            Text(url)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Text(entry.message)
+                            .font(.body)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+        }
+        .padding(16)
     }
 }
